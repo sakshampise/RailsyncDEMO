@@ -1,43 +1,65 @@
 export type Department = 'Civil' | 'S&T' | 'Electrical';
 export type Priority = 'High' | 'Medium' | 'Low';
-export type RequestStatus = 'Pending' | 'Bundled' | 'Scheduled' | 'Completed';
+export type RequestStatus = 'Pending' | 'Bundled' | 'Scheduled' | 'In Progress' | 'Paused' | 'Completed';
 
 export interface MaintenanceRequest {
   id: string;
   department: Department;
-  section: string; // e.g. "S2"
-  work: string; // e.g. "Track Replacement"
+  section: string; // e.g. "S2 (KM 120-145)"
+  work: string; // e.g. "Emergency Rail Joint Inspection"
   duration: number; // in minutes
   priority: Priority;
   status: RequestStatus;
-  compatibleWith?: string[]; // IDs of other requests
-  impactScore?: number;
+  compatibleWith?: string[];
+  description?: string;
+  submittedAt?: string;
+  crewName?: string;
 }
 
-export interface MaintenanceBlock {
-  id: string; // e.g. "B-02"
-  section: string; // "S2"
-  startTime: string; // "14:00"
-  endTime: string; // "16:00"
-  requests: string[]; // Array of request IDs
-  overrunRisk: number; // e.g. 18 (percentage)
-  status: 'Draft' | 'Optimized' | 'Conflicted' | 'Rescheduled' | 'Active';
+export type DemoStep = 
+  | '01_NEW_REQUEST'
+  | '02_SHADOW_BUNDLING'
+  | '03_CREW_CONTRIBUTION'
+  | '04_INJECT_DELAY';
+
+export interface DemoStepInfo {
+  id: DemoStep;
+  stepNumber: number;
+  badge: string;
+  title: string;
+  subtitle: string;
+  description: string;
 }
 
-export type TrainType = 'Vande Bharat' | 'Express' | 'Freight' | 'Intercity';
+export interface CrewContributionState {
+  taskAId: string;
+  taskAName: string;
+  taskADepartment: Department;
+  taskACrew: string;
+  taskAInitialProgress: number; // 50%
+  taskACurrentProgress: number; // 80%
+  taskAStatus: string;
+  contributorCrew: string; // "Crew B (S&T Team)"
+  contributorWorkers: number; // 2 technicians
+  taskBId: string;
+  taskBName: string;
+  taskBDepartment: Department;
+  taskBCrew: string;
+  taskBCheckpointProgress: number; // 60%
+  taskBStatus: string; // "Checkpointed — Resume in Next Slot"
+  taskBNote: string;
+}
 
-export interface Train {
-  id: string; // e.g. "T205"
-  name: string; // e.g. "12833 Howrah Express"
-  type: TrainType;
-  priority: Priority;
-  currentSection: string; // "S1", "S2", "S3", "L2" (Loop)
-  targetSection: string;
-  scheduledTimeS2: string; // e.g. "14:45"
-  delayMinutes: number; // 0, 45, etc.
-  route: string[]; // ["S1", "S2", "S3"] or ["S1", "L2", "S3"]
-  status: 'On Time' | 'Delayed' | 'Rerouted' | 'Held';
-  speedKmH: number;
+export interface DisruptionPauseState {
+  isDisruptionActive: boolean;
+  disruptionType: string;
+  disruptionMessage: string;
+  taskAStatus: 'PAUSED FOR NOW';
+  preservedProgress: number; // 80%
+  remainingProgress: number; // 20%
+  nextAvailableSlot: string; // "Slot B-07, Tomorrow 09:00 - 10:00"
+  handbackStatus: string;
+  reason: string;
 }
 
 export interface CorridorSection {
@@ -46,22 +68,16 @@ export interface CorridorSection {
   startStation: string;
   endStation: string;
   distanceKm: number;
-  tracks: number;
-  hasLoop: boolean;
+  status: 'Normal' | 'Bundled Maintenance' | 'Active Work' | 'Cleared Early';
 }
 
-export type DemoStep = 
-  | 'UNOPTIMIZED_REQUESTS'   // Step 1: Initial pool of scattered requests
-  | 'OPTIMIZED_BUNDLED'     // Step 2: AI Bundling B-02 (3 jobs -> 1 window)
-  | 'DISRUPTION_INJECTED'   // Step 3: Train 205 delayed 45 min -> CONFLICT DETECTED
-  | 'AI_RESOLVED_REROUTE'   // Step 4a: Train T205 rerouted via Loop L2
-  | 'AI_RESOLVED_SHIFT';    // Step 4b: Maintenance block shifted to 16:15
-
-export interface ScenarioMetrics {
-  totalBlocks: number;
-  unresolvedConflicts: number;
-  totalMaintenanceJobs: number;
-  trackDowntimeSavedMinutes: number;
-  trainDelayMinutes: number;
-  efficiencyScore: number;
+export interface BundledBlockInfo {
+  id: string; // "B-02"
+  section: string; // "S2"
+  window: string; // "14:00 - 16:00"
+  durationMinutes: number; // 120 (or 180 min slot)
+  unbundledDurationTotal: number; // 390
+  savedMinutes: number; // 210
+  savingsPercentage: number; // 54%
+  tasks: string[]; // Request IDs
 }
